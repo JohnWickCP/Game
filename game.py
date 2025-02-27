@@ -1,9 +1,9 @@
-import pygame
 import random
 import time
 from bot import BotSolver
 from utils import is_solvable, get_solution_state
 from levels import LevelManager
+from constants import ANIMATION_DURATION, BOT_MOVE_DELAY
 
 
 class Game:
@@ -14,7 +14,7 @@ class Game:
         self.is_solved = False
         self.is_animating = False
         self.animation_start_time = 0
-        self.animation_duration = 0.2  # seconds
+        self.animation_duration = ANIMATION_DURATION  # seconds
         self.animating_tile = None
         self.animating_from = None
         self.animating_to = None
@@ -31,7 +31,7 @@ class Game:
         self.bot_moves = []
         self.bot_current_move = 0
         self.bot_move_timer = 0
-        self.bot_move_delay = 0.5  # seconds
+        self.bot_move_delay = BOT_MOVE_DELAY  # seconds
         self.bot_total_moves = 0
 
         # Lịch sử nước đi
@@ -39,6 +39,9 @@ class Game:
 
         # Level manager
         self.level_manager = LevelManager()
+
+        # Thông tin map hiện tại
+        self.current_map = None  # None = map ngẫu nhiên
 
         # Khởi tạo bàn cờ mới
         self.new_game(size)
@@ -64,12 +67,14 @@ class Game:
         self.bot_current_move = 0
         self.bot_total_moves = 0
         self.move_history = []
+        self.current_map = None  # Map ngẫu nhiên
 
     def load_level(self, level_data):
         """Tải map từ dữ liệu level"""
         self.size = len(level_data["board"])
         self.board = level_data["board"]
         self.empty_pos = tuple(level_data["empty_pos"])
+        self.current_map = level_data["name"]
 
         # Reset các thuộc tính
         self.is_solved = False
@@ -256,6 +261,12 @@ class Game:
         if current == solution:
             self.is_solved = True
             self.game_active = False
+
+            # Lưu điểm số
+            from score import ScoreManager
+            score_manager = ScoreManager()
+            score_manager.save_score(self.size, self.moves, self.elapsed_time, self.current_map)
+
             return True
         return False
 

@@ -1,3 +1,5 @@
+from constants import MIN_MOVES_3X3, MIN_MOVES_4X4
+
 def is_solvable(flat_board, size, empty_row):
     """
     Kiểm tra xem bàn cờ có thể giải được không
@@ -105,8 +107,8 @@ def calculate_score(moves, time, size):
     """
     # Số bước tối thiểu lý thuyết (không thực tế)
     min_moves = {
-        3: 20,  # 3x3
-        4: 50  # 4x4
+        3: MIN_MOVES_3X3,  # 3x3
+        4: MIN_MOVES_4X4  # 4x4
     }
 
     # Càng ít bước và thời gian càng tốt

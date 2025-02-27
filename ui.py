@@ -1,11 +1,11 @@
 import pygame
 import time
 from score import ScoreManager
-from levels import LevelManager
+from constants import *
 
 
 class Button:
-    def __init__(self, screen, text, x, y, width, height, color=(80, 180, 80), hover_color=(100, 200, 100)):
+    def __init__(self, screen, text, x, y, width, height, color=BUTTON_COLOR, hover_color=BUTTON_HOVER_COLOR):
         self.screen = screen
         self.text = text
         self.rect = pygame.Rect(x, y, width, height)
@@ -26,81 +26,12 @@ class Button:
         pygame.draw.rect(self.screen, (0, 0, 0), self.rect, 1)  # Viền
 
         # Vẽ text
-        text_surface = self.font.render(self.text, True, (255, 255, 255))
+        text_surface = self.font.render(self.text, True, TEXT_COLOR)
         text_rect = text_surface.get_rect(center=self.rect.center)
         self.screen.blit(text_surface, text_rect)
 
     def is_clicked(self, pos):
         return self.rect.collidepoint(pos)
-
-
-class DropdownMenu:
-    def __init__(self, screen, options, x, y, width, height):
-        self.screen = screen
-        self.options = options
-        self.rect = pygame.Rect(x, y, width, height)
-        self.dropdown_rect = pygame.Rect(x, y + height, width, height * len(options))
-        self.font = pygame.font.SysFont('Arial', 18)
-        self.is_open = False
-        self.selected_option = options[0] if options else ""
-
-    def draw(self):
-        # Vẽ nút chính
-        pygame.draw.rect(self.screen, (80, 180, 80), self.rect)
-        pygame.draw.rect(self.screen, (0, 0, 0), self.rect, 1)  # Viền
-
-        # Vẽ text
-        text_surface = self.font.render(self.selected_option, True, (255, 255, 255))
-        text_rect = text_surface.get_rect(center=self.rect.center)
-        self.screen.blit(text_surface, text_rect)
-
-        # Vẽ dropdown nếu đang mở
-        if self.is_open:
-            for i, option in enumerate(self.options):
-                option_rect = pygame.Rect(
-                    self.rect.x,
-                    self.rect.y + self.rect.height + i * self.rect.height,
-                    self.rect.width,
-                    self.rect.height
-                )
-
-                # Hover effect
-                mouse_pos = pygame.mouse.get_pos()
-                if option_rect.collidepoint(mouse_pos):
-                    pygame.draw.rect(self.screen, (100, 200, 100), option_rect)
-                else:
-                    pygame.draw.rect(self.screen, (80, 180, 80), option_rect)
-
-                pygame.draw.rect(self.screen, (0, 0, 0), option_rect, 1)  # Viền
-
-                # Vẽ text
-                option_text = self.font.render(option, True, (255, 255, 255))
-                option_text_rect = option_text.get_rect(center=option_rect.center)
-                self.screen.blit(option_text, option_text_rect)
-
-    def handle_click(self, pos):
-        if self.rect.collidepoint(pos):
-            self.is_open = not self.is_open
-            return None
-
-        if self.is_open:
-            for i, option in enumerate(self.options):
-                option_rect = pygame.Rect(
-                    self.rect.x,
-                    self.rect.y + self.rect.height + i * self.rect.height,
-                    self.rect.width,
-                    self.rect.height
-                )
-
-                if option_rect.collidepoint(pos):
-                    self.selected_option = option
-                    self.is_open = False
-                    return option
-
-            # Nếu click ra ngoài, đóng dropdown
-            self.is_open = False
-
-        return None
 
 
 class UI:
@@ -110,14 +41,9 @@ class UI:
         self.score_manager = ScoreManager()
         self.level_manager = self.game.level_manager
 
-        # Màu sắc
-        self.BACKGROUND_COLOR = (240, 240, 240)  # Xám nhạt
-        self.TILE_COLOR = (50, 150, 220)  # Xanh dương
-        self.TILE_BORDER_COLOR = (30, 100, 180)  # Xanh đậm
-        self.TEXT_COLOR = (255, 255, 255)  # Trắng
-        self.BUTTON_COLOR = (80, 180, 80)  # Xanh lá
-        self.BUTTON_HOVER_COLOR = (100, 200, 100)  # Xanh lá nhạt
-        self.SOLVED_COLOR = (255, 215, 0)  # Vàng
+        # Lấy kích thước màn hình
+        self.screen_width = screen.get_width()
+        self.screen_height = screen.get_height()
 
         # Font
         pygame.font.init()
@@ -125,43 +51,113 @@ class UI:
         self.small_font = pygame.font.SysFont('Arial', 18)
         self.large_font = pygame.font.SysFont('Arial', 36)
 
-        # Kích thước bàn cờ và ô
-        self.board_size = 400
-        self.board_margin = 50
-        self.board_x = (screen.get_width() - self.board_size) // 2
-        self.board_y = (screen.get_height() - self.board_size) // 2 - 30
+        # Bố trí UI
+        self.setup_layout()
+
+        # Tạo các thành phần UI
+        self.create_buttons()
+
+    def setup_layout(self):
+        """Thiết lập bố cục giao diện"""
+        # Kích thước và vị trí bàn cờ
+        self.board_size = min(BOARD_SIZE, self.screen_width * 0.5)  # Giới hạn kích thước bàn cờ
+        self.board_x = (self.screen_width - self.board_size) // 2  # Đặt bàn cờ ở giữa
+        self.board_y = (self.screen_height - self.board_size) // 2
 
         # Tính kích thước ô dựa vào kích thước bàn cờ và số ô
         self.update_tile_size()
 
-        # Nút
+        # Vị trí khu vực điều khiển (bên trái)
+        self.control_area_width = 200
+        self.control_area_x = 20
+        self.control_area_y = 20
+
+        # Vị trí khu vực thông tin (bên phải) - Di chuyển sang phải hơn
+        self.info_area_width = 200
+        self.info_area_x = self.screen_width - self.info_area_width - 10
+        self.info_area_y = 20
+
+        # Vị trí khu vực điểm cao
+        self.score_area_x = self.info_area_x
+        self.score_area_y = self.screen_height // 2
+
+        # Hình ảnh mẫu - Di chuyển sang phải hơn
+        self.reference_image_size = min(120, self.info_area_width - 10)
+        self.reference_image_x = self.screen_width - self.reference_image_size - 20
+        self.reference_image_y = self.info_area_y + 30
+
+    def create_buttons(self):
+        """Tạo các nút điều khiển"""
+        # Nút chọn kích thước bàn cờ
         self.buttons = {
-            'new_game_3x3': Button(self.screen, "New 3x3", self.board_x, 30, 100, 40),
-            'new_game_4x4': Button(self.screen, "New 4x4", self.board_x + 110, 30, 100, 40),
-            'solve_bfs': Button(self.screen, "Solve BFS", self.board_x + 220, 30, 100, 40),
-            'solve_hill': Button(self.screen, "Hill Climbing", self.board_x + 330, 30, 140, 40)
+            'new_game_3x3': Button(
+                self.screen,
+                "New 3x3",
+                self.control_area_x,
+                self.control_area_y,
+                BUTTON_WIDTH,
+                BUTTON_HEIGHT
+            ),
+            'new_game_4x4': Button(
+                self.screen,
+                "New 4x4",
+                self.control_area_x + BUTTON_WIDTH + BUTTON_SPACING,
+                self.control_area_y,
+                BUTTON_WIDTH,
+                BUTTON_HEIGHT
+            ),
+            'solve_bfs': Button(
+                self.screen,
+                "Solve BFS",
+                self.board_x,
+                self.board_y + self.board_size + 20,
+                BUTTON_WIDTH,
+                BUTTON_HEIGHT
+            ),
+            'solve_hill': Button(
+                self.screen,
+                "Hill Climbing",
+                self.board_x + BUTTON_WIDTH + BUTTON_SPACING,
+                self.board_y + self.board_size + 20,
+                BUTTON_WIDTH + 40,
+                BUTTON_HEIGHT
+            )
         }
 
-        # Dropdown cho map
-        self.map_dropdown_3x3 = self._create_map_dropdown(3, self.board_x, 80, 150, 40)
-        self.map_dropdown_4x4 = self._create_map_dropdown(4, self.board_x + 160, 80, 150, 40)
-        self.current_dropdown = self.map_dropdown_3x3
+        # Tạo nút chọn map 3x3
+        levels_3x3 = self.level_manager.get_all_levels(3)
+        map_3x3_y = self.control_area_y + 100
 
-        # Hình ảnh mẫu cho trạng thái hoàn chỉnh
-        self.reference_image_size = 100
-        self.reference_image_x = self.board_x + self.board_size + 20
-        self.reference_image_y = self.board_y
+        self.map_buttons_3x3 = {}
+        for i, level in enumerate(levels_3x3[:4]):  # Giới hạn chỉ 4 map
+            self.map_buttons_3x3[f"map_3x3_{i}"] = Button(
+                self.screen,
+                f"Map {i + 1}",  # Đổi tên thành Map 1, Map 2, ...
+                self.control_area_x,
+                map_3x3_y + i * (BUTTON_HEIGHT + 10),
+                BUTTON_WIDTH + 50,
+                BUTTON_HEIGHT
+            )
 
-    def _create_map_dropdown(self, size, x, y, width, height):
-        """Tạo dropdown menu cho các map"""
-        levels = self.level_manager.get_all_levels(size)
-        options = [level["name"] for level in levels]
-        return DropdownMenu(self.screen, options, x, y, width, height)
+        # Tạo nút chọn map 4x4
+        levels_4x4 = self.level_manager.get_all_levels(4)
+        map_4x4_y = map_3x3_y + 4 * (BUTTON_HEIGHT + 10) + 50  # Chỉ có 4 map 3x3
+
+        self.map_buttons_4x4 = {}
+        for i, level in enumerate(levels_4x4[:4]):  # Giới hạn chỉ 4 map
+            self.map_buttons_4x4[f"map_4x4_{i}"] = Button(
+                self.screen,
+                f"Map {i + 1}",  # Đổi tên thành Map 1, Map 2, ...
+                self.control_area_x,
+                map_4x4_y + i * (BUTTON_HEIGHT + 10),
+                BUTTON_WIDTH + 50,
+                BUTTON_HEIGHT
+            )
 
     def update_tile_size(self):
         """Cập nhật kích thước ô dựa trên kích thước bàn cờ và số ô"""
         self.tile_size = self.board_size // self.game.size
-        self.tile_margin = 4
+        self.tile_margin = TILE_MARGIN
 
     def handle_event(self, event):
         """Xử lý sự kiện"""
@@ -179,45 +175,43 @@ class UI:
                     if name == 'new_game_3x3':
                         self.game.new_game(3)
                         self.update_tile_size()
-                        self.current_dropdown = self.map_dropdown_3x3
                     elif name == 'new_game_4x4':
                         self.game.new_game(4)
                         self.update_tile_size()
-                        self.current_dropdown = self.map_dropdown_4x4
                     elif name == 'solve_bfs':
                         self.game.start_bot("bfs")
                     elif name == 'solve_hill':
                         self.game.start_bot("hill_climbing")
 
-            # Kiểm tra click vào dropdown
-            selected_map_3x3 = self.map_dropdown_3x3.handle_click(mouse_pos)
-            if selected_map_3x3:
-                level_data = self.level_manager.get_level_by_name(3, selected_map_3x3)
-                if level_data:
-                    self.game.load_level(level_data)
-                    self.update_tile_size()
-                    self.current_dropdown = self.map_dropdown_3x3
+            # Kiểm tra click vào nút map 3x3
+            for name, button in self.map_buttons_3x3.items():
+                if button.is_clicked(mouse_pos):
+                    index = int(name.split('_')[-1])
+                    levels = self.level_manager.get_all_levels(3)
+                    if index < len(levels):
+                        self.game.load_level(levels[index])
+                        self.update_tile_size()
 
-            selected_map_4x4 = self.map_dropdown_4x4.handle_click(mouse_pos)
-            if selected_map_4x4:
-                level_data = self.level_manager.get_level_by_name(4, selected_map_4x4)
-                if level_data:
-                    self.game.load_level(level_data)
-                    self.update_tile_size()
-                    self.current_dropdown = self.map_dropdown_4x4
+            # Kiểm tra click vào nút map 4x4
+            for name, button in self.map_buttons_4x4.items():
+                if button.is_clicked(mouse_pos):
+                    index = int(name.split('_')[-1])
+                    levels = self.level_manager.get_all_levels(4)
+                    if index < len(levels):
+                        self.game.load_level(levels[index])
+                        self.update_tile_size()
 
     def draw(self):
         """Vẽ toàn bộ giao diện"""
         # Vẽ nền
-        self.screen.fill(self.BACKGROUND_COLOR)
+        self.screen.fill(BACKGROUND_COLOR)
 
-        # Vẽ các nút
+        # Vẽ các nút chính
         for button in self.buttons.values():
             button.draw()
 
-        # Vẽ dropdown
-        self.map_dropdown_3x3.draw()
-        self.map_dropdown_4x4.draw()
+        # Vẽ tiêu đề và các nút để chọn map
+        self.draw_map_selectors()
 
         # Vẽ bàn cờ
         self.draw_board()
@@ -233,6 +227,36 @@ class UI:
 
         # Vẽ lịch sử nước đi
         self.draw_move_history()
+
+    def draw_map_selectors(self):
+        """Vẽ danh sách chọn map"""
+        # Vẽ tiêu đề cho phần map 3x3
+        title_3x3_y = self.control_area_y + 100
+        title_3x3 = self.font.render("Maps 3x3", True, (0, 0, 0))
+        self.screen.blit(title_3x3, (self.control_area_x, title_3x3_y - 40))
+
+        # Vẽ các nút map 3x3
+        for button in self.map_buttons_3x3.values():
+            button.draw()
+
+        # Vẽ tiêu đề cho phần map 4x4
+        map_4x4_y = title_3x3_y + 4 * (BUTTON_HEIGHT + 10) + 50  # Chỉ có 4 map 3x3
+        title_4x4 = self.font.render("Maps 4x4", True, (0, 0, 0))
+        self.screen.blit(title_4x4, (self.control_area_x, map_4x4_y - 40))
+
+        # Vẽ các nút map 4x4
+        for button in self.map_buttons_4x4.values():
+            button.draw()
+
+        # Vẽ map hiện tại
+        current_map_text = "Current Map: "
+        if self.game.current_map:
+            current_map_text += self.game.current_map
+        else:
+            current_map_text += "Random"
+
+        current_map_surface = self.small_font.render(current_map_text, True, (0, 0, 0))
+        self.screen.blit(current_map_surface, (self.board_x, self.board_y - 30))
 
     def draw_board(self):
         """Vẽ bàn cờ"""
@@ -270,38 +294,40 @@ class UI:
                                         self.tile_size - 2 * self.tile_margin)
 
                 # Màu ô dựa vào trạng thái giải
-                tile_color = self.SOLVED_COLOR if self.game.is_solved else self.TILE_COLOR
+                tile_color = SOLVED_COLOR if self.game.is_solved else TILE_COLOR
 
                 pygame.draw.rect(self.screen, tile_color, tile_rect)
-                pygame.draw.rect(self.screen, self.TILE_BORDER_COLOR, tile_rect, 2)
+                pygame.draw.rect(self.screen, TILE_BORDER_COLOR, tile_rect, 2)
 
                 # Vẽ số trên ô
-                text_surface = self.font.render(str(tile_value), True, self.TEXT_COLOR)
+                text_surface = self.font.render(str(tile_value), True, TEXT_COLOR)
                 text_rect = text_surface.get_rect(center=tile_rect.center)
                 self.screen.blit(text_surface, text_rect)
 
     def draw_game_info(self):
         """Vẽ thông tin trạng thái game"""
+        info_x = self.board_x
+        info_y = self.board_y + self.board_size + 60
+
         # Hiển thị số bước
         moves_text = self.small_font.render(f"Moves: {self.game.moves}", True, (0, 0, 0))
-        self.screen.blit(moves_text, (self.board_x, self.board_y + self.board_size + 10))
+        self.screen.blit(moves_text, (info_x, info_y))
 
         # Hiển thị thời gian
         minutes = int(self.game.elapsed_time) // 60
         seconds = int(self.game.elapsed_time) % 60
         time_text = self.small_font.render(f"Time: {minutes:02d}:{seconds:02d}", True, (0, 0, 0))
-        self.screen.blit(time_text, (self.board_x + 150, self.board_y + self.board_size + 10))
+        self.screen.blit(time_text, (info_x + 150, info_y))
 
         # Hiển thị số bước của bot nếu bot đang hoạt động hoặc đã hoạt động
         if self.game.bot_total_moves > 0:
             bot_moves_text = self.small_font.render(f"Bot Moves: {self.game.bot_total_moves}", True, (0, 0, 0))
-            self.screen.blit(bot_moves_text, (self.board_x + 300, self.board_y + self.board_size + 10))
+            self.screen.blit(bot_moves_text, (info_x + 300, info_y))
 
         # Hiển thị thông báo khi giải xong
         if self.game.is_solved:
             solved_text = self.large_font.render("Puzzle Solved!", True, (0, 150, 0))
-            solved_rect = solved_text.get_rect(center=(self.screen.get_width() // 2,
-                                                       self.board_y + self.board_size + 45))
+            solved_rect = solved_text.get_rect(center=(self.screen_width // 2, info_y + 40))
             self.screen.blit(solved_text, solved_rect)
 
     def draw_reference_image(self):
@@ -336,13 +362,13 @@ class UI:
                                             tile_size - 2 * margin,
                                             tile_size - 2 * margin)
 
-                    pygame.draw.rect(self.screen, self.TILE_COLOR, tile_rect)
-                    pygame.draw.rect(self.screen, self.TILE_BORDER_COLOR, tile_rect, 1)
+                    pygame.draw.rect(self.screen, TILE_COLOR, tile_rect)
+                    pygame.draw.rect(self.screen, TILE_BORDER_COLOR, tile_rect, 1)
 
                     # Vẽ số
                     font_size = 16 if self.game.size == 3 else 12
                     number_font = pygame.font.SysFont('Arial', font_size)
-                    text_surface = number_font.render(str(counter), True, self.TEXT_COLOR)
+                    text_surface = number_font.render(str(counter), True, TEXT_COLOR)
                     text_rect = text_surface.get_rect(center=tile_rect.center)
                     self.screen.blit(text_surface, text_rect)
 
@@ -350,37 +376,53 @@ class UI:
 
     def draw_high_scores(self):
         """Vẽ danh sách điểm cao"""
-        # Lấy danh sách điểm cao
-        high_scores = self.score_manager.get_high_scores(self.game.size)
-
         # Vị trí hiển thị
-        x = self.reference_image_x
-        y = self.reference_image_y + self.reference_image_size + 20
+        score_x = self.info_area_x
+        score_y = self.reference_image_y + self.reference_image_size + 30
+
+        # Lấy danh sách điểm cao
+        if self.game.current_map:
+            # Điểm cao cho map cụ thể
+            high_scores = self.score_manager.get_high_scores(self.game.size, self.game.current_map)
+            title = f"High Scores for {self.game.current_map}"
+        else:
+            # Điểm cao cho map ngẫu nhiên
+            high_scores = self.score_manager.get_high_scores(self.game.size)
+            title = f"High Scores ({self.game.size}x{self.game.size})"
 
         # Tiêu đề
-        title_text = self.small_font.render(f"High Scores ({self.game.size}x{self.game.size})", True, (0, 0, 0))
-        self.screen.blit(title_text, (x, y))
+        title_text = self.small_font.render(title, True, (0, 0, 0))
+        self.screen.blit(title_text, (score_x, score_y))
 
         # Hiển thị tối đa 5 điểm cao
-        for i, score in enumerate(high_scores[:5]):
-            score_text = self.small_font.render(f"{i + 1}. {score['moves']} moves - {score['time']}s", True, (0, 0, 0))
-            self.screen.blit(score_text, (x, y + 25 + i * 20))
+        if high_scores:
+            for i, score in enumerate(high_scores[:5]):
+                score_text = self.small_font.render(f"{i + 1}. {score['moves']} moves - {score['time']}s", True,
+                                                    (0, 0, 0))
+                self.screen.blit(score_text, (score_x, score_y + 25 + i * 20))
+        else:
+            no_scores_text = self.small_font.render("No high scores yet", True, (0, 0, 0))
+            self.screen.blit(no_scores_text, (score_x, score_y + 25))
 
     def draw_move_history(self):
         """Vẽ lịch sử nước đi"""
         # Vị trí hiển thị
-        x = 20
-        y = self.board_y
+        history_x = self.info_area_x
+        history_y = self.reference_image_y + self.reference_image_size + 150
 
         # Tiêu đề
         title_text = self.small_font.render("Move History", True, (0, 0, 0))
-        self.screen.blit(title_text, (x, y))
+        self.screen.blit(title_text, (history_x, history_y))
 
         # Hiển thị tối đa 10 nước đi gần nhất
         history = self.game.move_history[-10:] if len(self.game.move_history) > 10 else self.game.move_history
 
-        for i, move in enumerate(history):
-            move_text = self.small_font.render(
-                f"{len(self.game.move_history) - len(history) + i + 1}. Row {move[0] + 1}, Col {move[1] + 1}", True,
-                (0, 0, 0))
-            self.screen.blit(move_text, (x, y + 25 + i * 20))
+        if history:
+            for i, move in enumerate(history):
+                move_text = self.small_font.render(
+                    f"{len(self.game.move_history) - len(history) + i + 1}. Row {move[0] + 1}, Col {move[1] + 1}", True,
+                    (0, 0, 0))
+                self.screen.blit(move_text, (history_x, history_y + 25 + i * 20))
+        else:
+            no_moves_text = self.small_font.render("No moves yet", True, (0, 0, 0))
+            self.screen.blit(no_moves_text, (history_x, history_y + 25))
