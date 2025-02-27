@@ -3,8 +3,6 @@
 ## Giới thiệu
 Sliding Puzzle Game là một trò chơi xếp hình trượt được phát triển bằng Python và Pygame. Người chơi sẽ di chuyển các ô để sắp xếp chúng theo thứ tự từ 1 đến n (với n là tổng số ô - 1), với một ô trống ở vị trí cuối cùng.
 
-![Sliding Puzzle Game Screenshot](screenshot.png)
-
 ## Tính năng
 - Hỗ trợ hai kích thước bàn chơi: 3x3 và 4x4
 - 4 map có sẵn cho mỗi kích thước bàn chơi
