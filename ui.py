@@ -1,5 +1,4 @@
 import pygame
-import time
 from score import ScoreManager
 from constants import *
 
@@ -397,8 +396,22 @@ class UI:
         # Hiển thị tối đa 5 điểm cao
         if high_scores:
             for i, score in enumerate(high_scores[:5]):
-                score_text = self.small_font.render(f"{i + 1}. {score['moves']} moves - {score['time']}s", True,
-                                                    (0, 0, 0))
+                # Hiển thị thông tin người/bot giải
+                solver_info = ""
+                if "solver" in score:
+                    if score["solver"] == "player":
+                        solver_info = "Player"
+                    elif score["solver"] == "bfs":
+                        solver_info = "BFS"
+                    elif score["solver"] == "hill_climbing":
+                        solver_info = "Hill Climbing"
+                    else:
+                        solver_info = score["solver"]
+
+                score_text = self.small_font.render(
+                    f"{i + 1}. {score['moves']} moves - {score['time']}s {solver_info}",
+                    True, (0, 0, 0)
+                )
                 self.screen.blit(score_text, (score_x, score_y + 25 + i * 20))
         else:
             no_scores_text = self.small_font.render("No high scores yet", True, (0, 0, 0))
@@ -406,9 +419,21 @@ class UI:
 
     def draw_move_history(self):
         """Vẽ lịch sử nước đi"""
-        # Vị trí hiển thị
+        # Vị trí hiển thị - Điều chỉnh tăng khoảng cách xuống dưới
         history_x = self.info_area_x
-        history_y = self.reference_image_y + self.reference_image_size + 150
+
+        # Tăng vị trí y để di chuyển phần Move History xuống thấp hơn
+        # Tăng từ +150 lên +200 hoặc cao hơn
+        history_y = self.reference_image_y + self.reference_image_size + 200
+
+        # Vẽ đường ngăn cách giữa High Scores và Move History
+        pygame.draw.line(
+            self.screen,
+            (200, 200, 200),  # Màu xám nhạt
+            (history_x, history_y - 20),  # Điểm bắt đầu
+            (history_x + self.info_area_width, history_y - 20),  # Điểm kết thúc
+            2  # Độ dày đường
+        )
 
         # Tiêu đề
         title_text = self.small_font.render("Move History", True, (0, 0, 0))

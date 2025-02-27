@@ -4,6 +4,12 @@ from utils import calculate_score, format_time
 from constants import DATA_DIRECTORY, SCORES_FILE, MAX_HIGH_SCORES, MAX_HIGH_SCORES_PER_MAP
 
 
+def _get_current_date():
+    """Lấy ngày giờ hiện tại dưới dạng chuỗi"""
+    from datetime import datetime
+    return datetime.now().strftime("%Y-%m-%d %H:%M")
+
+
 class ScoreManager:
     def __init__(self):
         self.scores_file = SCORES_FILE
@@ -26,7 +32,7 @@ class ScoreManager:
             with open(self.scores_file, 'w') as f:
                 json.dump(default_scores, f)
 
-    def save_score(self, size, moves, time_elapsed, map_name=None):
+    def save_score(self, size, moves, time_elapsed, map_name=None, solver="player"):
         """
         Lưu điểm số mới
 
@@ -35,6 +41,7 @@ class ScoreManager:
             moves: Số bước đi
             time_elapsed: Thời gian hoàn thành (giây)
             map_name: Tên map cụ thể (None nếu là map ngẫu nhiên)
+            solver: Người giải puzzle ("player", "bfs", hoặc "hill_climbing")
 
         Returns:
             dict: Thông tin điểm số vừa lưu
@@ -53,7 +60,8 @@ class ScoreManager:
             "time": int(time_elapsed),
             "time_formatted": format_time(time_elapsed),
             "score": score,
-            "date": self._get_current_date()
+            "date": _get_current_date(),
+            "solver": solver  # Thêm thông tin người/bot giải
         }
 
         # Đảm bảo key tồn tại và có cấu trúc đúng
@@ -166,7 +174,3 @@ class ScoreManager:
         with open(self.scores_file, 'w') as f:
             json.dump(scores, f, indent=2)
 
-    def _get_current_date(self):
-        """Lấy ngày giờ hiện tại dưới dạng chuỗi"""
-        from datetime import datetime
-        return datetime.now().strftime("%Y-%m-%d %H:%M")

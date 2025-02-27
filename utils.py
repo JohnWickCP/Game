@@ -72,7 +72,7 @@ def get_tile_position(tile, board, size):
     for row in range(size):
         for col in range(size):
             if board[row][col] == tile:
-                return (row, col)
+                return row, col
 
     return None
 

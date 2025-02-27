@@ -33,6 +33,7 @@ class Game:
         self.bot_move_timer = 0
         self.bot_move_delay = BOT_MOVE_DELAY  # seconds
         self.bot_total_moves = 0
+        self.bot_algorithm = None  # Thêm thuộc tính để lưu thuật toán bot
 
         # Lịch sử nước đi
         self.move_history = []
@@ -112,6 +113,7 @@ class Game:
     def _shuffle_board(self):
         """Trộn bàn cờ và đảm bảo nó có thể giải được"""
         # Làm phẳng bàn cờ
+        global empty_col, empty_row
         flat_board = [tile for row in self.board for tile in row]
 
         # Trộn cho đến khi tìm được một trạng thái có thể giải
@@ -208,6 +210,7 @@ class Game:
             self.move_history.append(pos)
         else:
             self.bot_total_moves += 1
+            # Không cần thêm vào lịch sử nước đi của người chơi
 
         return True
 
@@ -254,7 +257,6 @@ class Game:
                     self.bot_active = False
 
     def check_solved(self):
-        """Kiểm tra xem puzzle đã được giải chưa"""
         solution = get_solution_state(self.size)
         current = [tile for row in self.board for tile in row]
 
@@ -265,7 +267,24 @@ class Game:
             # Lưu điểm số
             from score import ScoreManager
             score_manager = ScoreManager()
-            score_manager.save_score(self.size, self.moves, self.elapsed_time, self.current_map)
+
+            # Xác định người/bot giải
+            solver = "player"
+            total_moves = self.moves
+
+            # Nếu bot đã giải puzzle
+            if self.bot_active or self.bot_total_moves > 0:
+                total_moves = self.bot_total_moves
+                solver = self.bot_algorithm if self.bot_algorithm else "bot"
+
+            # Lưu điểm với thông tin người/bot giải
+            score_manager.save_score(
+                self.size,
+                total_moves,
+                self.elapsed_time,
+                self.current_map,
+                solver
+            )
 
             return True
         return False
@@ -278,11 +297,14 @@ class Game:
         # Reset số bước của bot
         self.bot_total_moves = 0
 
+        # Lưu thuật toán hiện tại của bot
+        self.bot_algorithm = algorithm
+
         # Tìm các bước giải bằng thuật toán được chọn
         if algorithm == "hill_climbing":
             self.bot_moves = self.bot_solver.solve_hill_climbing()
         else:  # BFS
-            self.bot_moves = self.bot_solver.solve_bfs()
+            self.bot_moves = self.bot_solver.solve_best_first_search()
 
         self.bot_active = True
         self.bot_current_move = 0

@@ -1,6 +1,10 @@
 import heapq
-from collections import deque
 import time
+
+def _convert_path_to_moves(path):
+    """Chuyển đổi path thành danh sách các vị trí di chuyển"""
+    # Trong trường hợp này, path đã là danh sách các vị trí di chuyển
+    return path
 
 
 class BotSolver:
@@ -20,9 +24,9 @@ class BotSolver:
                     solution.append(i * self.size + j + 1)
         return solution
 
-    def solve_bfs(self):
-        """Giải puzzle bằng thuật toán BFS"""
-        print("Starting BFS solver...")
+    def solve_best_first_search(self):
+        """Giải puzzle bằng thuật toán Best First Search"""
+        print("Starting Best First Search solver...")
         start_time = time.time()
 
         # Chuyển đổi bàn cờ từ 2D sang mảng 1D
@@ -31,27 +35,30 @@ class BotSolver:
             for tile in row:
                 start_state.append(tile)
 
-        # Queue cho BFS
-        queue = deque([(start_state, [])])  # (state, path)
+        # Priority queue cho Best First Search (sử dụng heapq)
+        # (heuristic, state, path)
+        start_heuristic = self._manhattan_distance(start_state)
+        open_set = [(start_heuristic, start_state, [])]
+        heapq.heapify(open_set)
 
         # Đánh dấu các trạng thái đã thăm
-        visited = set([tuple(start_state)])
+        visited = {tuple(start_state)}
 
         max_iterations = 10000  # Giới hạn số lần lặp
         iterations = 0
 
-        while queue and iterations < max_iterations:
+        while open_set and iterations < max_iterations:
             iterations += 1
 
-            # Lấy trạng thái hiện tại
-            state, path = queue.popleft()
+            # Lấy trạng thái có heuristic nhỏ nhất
+            _, state, path = heapq.heappop(open_set)
 
             # Kiểm tra nếu đã tìm được giải pháp
             if self._is_goal_state(state):
-                print(f"BFS found solution in {iterations} iterations and {time.time() - start_time:.2f} seconds")
+                print(
+                    f"Best First Search found solution in {iterations} iterations and {time.time() - start_time:.2f} seconds")
                 print(f"Solution length: {len(path)} steps")
-
-                return self._convert_path_to_moves(path)
+                return _convert_path_to_moves(path)
 
             # Tạo các trạng thái tiếp theo
             empty_index = state.index(0)
@@ -80,9 +87,12 @@ class BotSolver:
                     # Nếu trạng thái mới chưa được thăm
                     if tuple(new_state) not in visited:
                         visited.add(tuple(new_state))
-                        queue.append((new_state, path + [move_pos]))
+                        # Tính giá trị heuristic mới
+                        new_heuristic = self._manhattan_distance(new_state)
+                        # Thêm vào priority queue
+                        heapq.heappush(open_set, (new_heuristic, new_state, path + [move_pos]))
 
-        print(f"BFS failed to find solution after {iterations} iterations")
+        print(f"Best First Search failed to find solution after {iterations} iterations")
         # Nếu không tìm được giải pháp, trả về danh sách rỗng
         return []
 
@@ -101,7 +111,7 @@ class BotSolver:
         current_cost = self._manhattan_distance(current_state)
 
         path = []  # Lưu các vị trí di chuyển
-        visited = set([tuple(current_state)])
+        visited = {tuple(current_state)}
 
         max_iterations = 1000  # Giới hạn số lần lặp
         iterations = 0
@@ -189,7 +199,3 @@ class BotSolver:
 
         return distance
 
-    def _convert_path_to_moves(self, path):
-        """Chuyển đổi path thành danh sách các vị trí di chuyển"""
-        # Trong trường hợp này, path đã là danh sách các vị trí di chuyển
-        return path
