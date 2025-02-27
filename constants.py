@@ -15,6 +15,10 @@ BOT_MOVE_DELAY = 0.5  # Thời gian delay giữa các bước của bot (giây)
 MAX_HIGH_SCORES = 10  # Số lượng điểm cao tối đa được lưu cho mỗi loại bàn
 MAX_HIGH_SCORES_PER_MAP = 5  # Số lượng điểm cao tối đa được lưu cho mỗi map
 
+#Kich thuoc man hinh
+WIDTH, HEIGHT = 1000, 700  # Tăng kích thước từ 800x600 lên 1000x700
+FPS = 60
+
 # Độ khó
 MIN_MOVES_3X3 = 20  # Số bước tối thiểu lý thuyết cho bàn 3x3
 MIN_MOVES_4X4 = 50  # Số bước tối thiểu lý thuyết cho bàn 4x4

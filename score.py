@@ -3,7 +3,6 @@ import os
 from utils import calculate_score, format_time
 from constants import DATA_DIRECTORY, SCORES_FILE, MAX_HIGH_SCORES, MAX_HIGH_SCORES_PER_MAP
 
-
 def _get_current_date():
     """Lấy ngày giờ hiện tại dưới dạng chuỗi"""
     from datetime import datetime
@@ -173,4 +172,3 @@ class ScoreManager:
         """Lưu dữ liệu điểm vào file"""
         with open(self.scores_file, 'w') as f:
             json.dump(scores, f, indent=2)
-

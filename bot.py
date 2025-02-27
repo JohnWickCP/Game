@@ -198,4 +198,3 @@ class BotSolver:
             distance += abs(curr_row - target_row) + abs(curr_col - target_col)
 
         return distance
-

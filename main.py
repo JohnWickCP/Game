@@ -2,7 +2,7 @@ import pygame
 import sys
 from game import Game
 from ui import UI
-
+from constants import WIDTH, HEIGHT, FPS
 
 def main():
     # Khởi tạo pygame
@@ -11,10 +11,10 @@ def main():
     pygame.display.set_caption("Sliding Puzzle Game")
 
     # Cấu hình cơ bản - Tăng kích thước màn hình
-    WIDTH, HEIGHT = 1000, 700  # Tăng kích thước từ 800x600 lên 1000x700
+
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
-    FPS = 60
+
 
     # Khởi tạo các thành phần game
     game = Game()
